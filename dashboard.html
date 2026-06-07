@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appraisal Analytics Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .dashboard-container { max-width: 1100px; margin: 0 auto; }
+        h2 { color: #1a73e8; margin-bottom: 5px; }
+        p.subtitle { color: #5f6368; margin-top: 0; margin-bottom: 25px; }
+        
+        /* Filter Controls Panel */
+        .filter-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #5f6368; text-transform: uppercase; }
+        select { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #fff; }
+        
+        /* Table Layout */
+        .table-responsive { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 800px; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid #dee2e6; }
+        th { background: #f1f3f4; font-weight: 600; color: #444; }
+        
+        /* Performance Badge Colors */
+        .badge { padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; display: inline-block; }
+        .high-score { background: #e8f5e9; color: #2e7d32; }
+        .mid-score { background: #feeee2; color: #d97706; }
+        .low-score { background: #ffebee; color: #c62828; }
+        .loading { text-align: center; padding: 40px; font-weight: bold; color: #666; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <h2>Appraisal Results Analytics Dashboard</h2>
+    <p class="subtitle">Filter and rank personnel assessment entries across metrics and tracking classes.</p>
+    
+    <div class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="filter-dept">Filter by Department</label>
+                <select id="filter-dept" onchange="applyFiltersAndSort()">
+                    <option value="All">All Departments</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Unassigned">Unassigned / Deleted Profiles</option>
+                </select>
+            </div>
+            <div>
+                <label for="filter-category">Filter by Service Category</label>
+                <select id="filter-category" onchange="applyFiltersAndSort()">
+                    <option value="All">All Categories</option>
+                    <option value="Active Duty">Active Duty</option>
+                    <option value="Contractual">Contractual</option>
+                    <option value="Civilian Staff">Civilian Staff</option>
+                    <option value="Unassigned">Unassigned / Deleted Profiles</option>
+                </select>
+            </div>
+            <div>
+                <label for="sort-scores">Sort By Total Score</label>
+                <select id="sort-scores" onchange="applyFiltersAndSort()">
+                    <option value="latest">Submission Date (Newest First)</option>
+                    <option value="desc">Performance Score (Highest to Lowest)</option>
+                    <option value="asc">Performance Score (Lowest to Highest)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Service No.</th>
+                    <th>Rank</th>
+                    <th>Department</th>
+                    <th>Category</th>
+                    <th>Supervisor Reviewer</th>
+                    <th>Total Score</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody id="dashboardBody">
+                <tr>
+                    <td colspan="8" class="loading">Loading performance database...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // CONFIGURATION: Paste your deployed Google Apps Script Web App URL here
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK0euyLj1qSrr5MmDwx6p3Ju7-CVyxbLIgMR61SfWxjPR2xpNJqWUlGfpAbybCsAF4/exec";
+    
+    let masterRecords = []; // Stores master payload securely in browser runtime memory
+
+    document.addEventListener("DOMContentLoaded", fetchDashboardData);
+
+    function fetchDashboardData() {
+        fetch(`${SCRIPT_URL}?action=getAppraisalDashboard`)
+            .then(res => res.json())
+            .then(response => {
+                if(response.success) {
+                    masterRecords = response.data;
+                    applyFiltersAndSort(); // Run initial execution render
+                } else {
+                    document.getElementById("dashboardBody").innerHTML = `<tr><td colspan="8" class="loading" style="color:red">Error loading records: ${response.error}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById("dashboardBody").innerHTML = `<tr><td colspan="8" class="loading" style="color:red">Lookup connection error.</td></tr>`;
+            });
+    }
+
+    function applyFiltersAndSort() {
+        const deptFilter = document.getElementById("filter-dept").value;
+        const catFilter = document.getElementById("filter-category").value;
+        const sortRule = document.getElementById("sort-scores").value;
+        const tbody = document.getElementById("dashboardBody");
+        
+        // 1. Process Filtering Criteria
+        let filtered = masterRecords.filter(record => {
+            const matchesDept = (deptFilter === "All" || record.department === deptFilter);
+            const matchesCat = (catFilter === "All" || record.service_category === catFilter);
+            return matchesDept && matchesCat;
+        });
+
+        // 2. Process Sorting Rules
+        if (sortRule === "desc") {
+            filtered.sort((a, b) => b.total - a.total);
+        } else if (sortRule === "asc") {
+            filtered.sort((a, b) => a.total - b.total);
+        } else if (sortRule === "latest") {
+            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        // 3. Render HTML Rows
+        tbody.innerHTML = "";
+        if(filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="loading">No matching appraisal submissions found.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(record => {
+            const row = document.createElement("tr");
+            
+            // Generate visual score threshold styles dynamically
+            let badgeClass = "low-score";
+            if (record.total >= 20) badgeClass = "high-score";
+            else if (record.total >= 12) badgeClass = "mid-score";
+
+            row.innerHTML = `
+                <strong>${record.full_name}</strong>
+                <td>${record.full_name}</td>
+                <td><code>${record.service_number}</code></td>
+                <td>${record.rank}</td>
+                <td>${record.department}</td>
+                <td>${record.service_category}</td>
+                <td>${record.supervisor}</td>
+                <td><span class="badge ${badgeClass}">${record.total} / 25</span></td>
+                <td><strong>${record.percentage}</strong></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+</script>
+</body>
+</html>
