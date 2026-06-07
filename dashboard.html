@@ -33,9 +33,24 @@
 <body>
 
 <div class="dashboard-container">
-    <h2>Appraisal Results Analytics Dashboard</h2>
-    <p class="subtitle">Filter and rank personnel assessment entries across metrics and tracking classes.</p>
+    <h2>Staff Performance Averages Dashboard</h2>
+    <p class="subtitle">Consolidated view showing unique staff members alongside their overall mean score averages.</p>
     
+    <div class="metrics-panel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;">
+            <span style="font-size: 13px; font-weight: 600; color: #5f6368; text-transform: uppercase; display: block; margin-bottom: 5px;">Global Cohort Average</span>
+            <span id="avg-score-display" style="font-size: 2rem; font-weight: bold; color: #1a73e8;">0.0 / 25</span>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;">
+            <span style="font-size: 13px; font-weight: 600; color: #5f6368; text-transform: uppercase; display: block; margin-bottom: 5px;">Global Avg Percentage</span>
+            <span id="avg-percent-display" style="font-size: 2rem; font-weight: bold; color: #2e7d32;">0.0%</span>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;">
+            <span style="font-size: 13px; font-weight: 600; color: #5f6368; text-transform: uppercase; display: block; margin-bottom: 5px;">Unique Staff Count</span>
+            <span id="total-count-display" style="font-size: 2rem; font-weight: bold; color: #333;">0</span>
+        </div>
+    </div>
+
     <div class="filter-card">
         <div class="filter-grid">
             <div>
@@ -61,11 +76,10 @@
                 </select>
             </div>
             <div>
-                <label for="sort-scores">Sort By Total Score</label>
+                <label for="sort-scores">Sort By Average Score</label>
                 <select id="sort-scores" onchange="applyFiltersAndSort()">
-                    <option value="latest">Submission Date (Newest First)</option>
-                    <option value="desc">Performance Score (Highest to Lowest)</option>
-                    <option value="asc">Performance Score (Lowest to Highest)</option>
+                    <option value="desc">Average Score (Highest to Lowest)</option>
+                    <option value="asc">Average Score (Lowest to Highest)</option>
                 </select>
             </div>
         </div>
@@ -80,9 +94,9 @@
                     <th>Rank</th>
                     <th>Department</th>
                     <th>Category</th>
-                    <th>Supervisor Reviewer</th>
-                    <th>Total Score</th>
-                    <th>Percentage</th>
+                    <th>Appraisals Logged</th>
+                    <th>Average Score</th>
+                    <th>Average Percentage</th>
                 </tr>
             </thead>
             <tbody id="dashboardBody">
@@ -98,7 +112,7 @@
     // CONFIGURATION: Paste your deployed Google Apps Script Web App URL here
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK0euyLj1qSrr5MmDwx6p3Ju7-CVyxbLIgMR61SfWxjPR2xpNJqWUlGfpAbybCsAF4/exec";
     
-    let masterRecords = []; // Stores master payload securely in browser runtime memory
+    let consolidatedStaffRecords = []; // Holds unique aggregated profiles
 
     document.addEventListener("DOMContentLoaded", fetchDashboardData);
 
@@ -107,8 +121,8 @@
             .then(res => res.json())
             .then(response => {
                 if(response.success) {
-                    masterRecords = response.data;
-                    applyFiltersAndSort(); // Run initial execution render
+                    processAndConsolidateData(response.data);
+                    applyFiltersAndSort(); 
                 } else {
                     document.getElementById("dashboardBody").innerHTML = `<tr><td colspan="8" class="loading" style="color:red">Error loading records: ${response.error}</td></tr>`;
                 }
@@ -118,14 +132,60 @@
             });
     }
 
+    // Aggregates raw list submissions by Service Number to compute individual means
+    function processAndConsolidateData(rawAppraisals) {
+        const staffGroup = {};
+
+        rawAppraisals.forEach(record => {
+            const id = record.service_number.trim().toLowerCase();
+            
+            // Clean decimal reading formatting if found
+            let cleanPercent = parseFloat(record.percentage);
+            if(cleanPercent <= 1) { cleanPercent = cleanPercent * 100; }
+
+            if (!staffGroup[id]) {
+                // Initialize staff item group structure
+                staffGroup[id] = {
+                    full_name: record.full_name,
+                    service_number: record.service_number,
+                    rank: record.rank,
+                    department: record.department,
+                    service_category: record.service_category,
+                    totalScoreSum: record.total,
+                    percentageSum: cleanPercent,
+                    appraisalCount: 1
+                };
+            } else {
+                // Accumulate values for existing group
+                staffGroup[id].totalScoreSum += record.total;
+                staffGroup[id].percentageSum += cleanPercent;
+                staffGroup[id].appraisalCount += 1;
+            }
+        });
+
+        // Convert grouped objects to flat arrays with calculated mathematical averages
+        consolidatedStaffRecords = Object.values(staffGroup).map(staff => {
+            return {
+                full_name: staff.full_name,
+                service_number: staff.service_number,
+                rank: staff.rank,
+                department: staff.department,
+                service_category: staff.service_category,
+                appraisal_count: staff.appraisalCount,
+                avg_total: staff.totalScoreSum / staff.appraisalCount,
+                avg_percentage: staff.percentageSum / staff.appraisalCount
+            };
+        });
+    }
+
     function applyFiltersAndSort() {
         const deptFilter = document.getElementById("filter-dept").value;
         const catFilter = document.getElementById("filter-category").value;
         const sortRule = document.getElementById("sort-scores").value;
         const tbody = document.getElementById("dashboardBody");
         
-        // 1. Process Filtering Criteria
-        let filtered = masterRecords.filter(record => {
+        // 1. Filter structural records data
+        let filtered = consolidatedStaffRecords.filter(record => {
             const matchesDept = (deptFilter === "All" || record.department === deptFilter);
             const matchesCat = (catFilter === "All" || record.service_category === catFilter);
             return matchesDept && matchesCat;
@@ -133,33 +193,39 @@
 
         // 2. Process Sorting Rules
         if (sortRule === "desc") {
-            filtered.sort((a, b) => b.total - a.total);
+            filtered.sort((a, b) => b.avg_total - a.avg_total);
         } else if (sortRule === "asc") {
-            filtered.sort((a, b) => a.total - b.total);
-        } else if (sortRule === "latest") {
-            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            filtered.sort((a, b) => a.avg_total - b.avg_total);
         }
 
-        // 3. Render HTML Rows
+        // 3. Calculate Global Group KPI Averages
+        let globalScoreSum = 0;
+        let totalUniqueStaff = filtered.length;
+
+        filtered.forEach(record => {
+            globalScoreSum += record.avg_total;
+        });
+
+        let globalAvgScore = totalUniqueStaff > 0 ? (globalScoreSum / totalUniqueStaff) : 0;
+        let globalAvgPercent = (globalAvgScore / 25) * 100;
+
+        document.getElementById("avg-score-display").textContent = `${globalAvgScore.toFixed(1)} / 25`;
+        document.getElementById("avg-percent-display").textContent = `${globalAvgPercent.toFixed(1)}%`;
+        document.getElementById("total-count-display").textContent = totalUniqueStaff;
+
+        // 4. Render Table Layout
         tbody.innerHTML = "";
         if(filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="loading">No matching appraisal submissions found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="loading">No unique staff members found for criteria selection.</td></tr>`;
             return;
         }
 
         filtered.forEach(record => {
             const row = document.createElement("tr");
             
-            // Generate visual score threshold styles dynamically
             let badgeClass = "low-score";
-            if (record.total >= 20) badgeClass = "high-score";
-            else if (record.total >= 12) badgeClass = "mid-score";
-
-            // Convert decimal format percentage (e.g., 0.8) to clean percentage text (80.0%)
-            let displayPercentage = record.percentage;
-            if (!isNaN(record.percentage) && record.percentage <= 1) {
-                displayPercentage = (parseFloat(record.percentage) * 100).toFixed(1) + "%";
-            }
+            if (record.avg_total >= 20) badgeClass = "high-score";
+            else if (record.avg_total >= 12) badgeClass = "mid-score";
 
             row.innerHTML = `
                 <td>${record.full_name}</td>
@@ -167,9 +233,9 @@
                 <td>${record.rank}</td>
                 <td>${record.department}</td>
                 <td>${record.service_category}</td>
-                <td>${record.supervisor}</td>
-                <td><span class="badge ${badgeClass}">${record.total} / 25</span></td>
-                <td><strong>${displayPercentage}</strong></td>
+                <td style="text-align: center; font-weight: bold; color: #5f6368;">${record.appraisal_count}</td>
+                <td><span class="badge ${badgeClass}">${record.avg_total.toFixed(1)} / 25</span></td>
+                <td><strong>${record.avg_percentage.toFixed(1)}%</strong></td>
             `;
             tbody.appendChild(row);
         });
