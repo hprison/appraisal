@@ -155,8 +155,13 @@
             if (record.total >= 20) badgeClass = "high-score";
             else if (record.total >= 12) badgeClass = "mid-score";
 
+            // Convert decimal format percentage (e.g., 0.8) to clean percentage text (80.0%)
+            let displayPercentage = record.percentage;
+            if (!isNaN(record.percentage) && record.percentage <= 1) {
+                displayPercentage = (parseFloat(record.percentage) * 100).toFixed(1) + "%";
+            }
+
             row.innerHTML = `
-                <strong>${record.full_name}</strong>
                 <td>${record.full_name}</td>
                 <td><code>${record.service_number}</code></td>
                 <td>${record.rank}</td>
@@ -164,7 +169,7 @@
                 <td>${record.service_category}</td>
                 <td>${record.supervisor}</td>
                 <td><span class="badge ${badgeClass}">${record.total} / 25</span></td>
-                <td><strong>${record.percentage}</strong></td>
+                <td><strong>${displayPercentage}</strong></td>
             `;
             tbody.appendChild(row);
         });
