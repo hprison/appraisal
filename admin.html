@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Directory Management Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .admin-container { max-width: 1000px; margin: 0 auto; }
+        h2 { color: #1a73e8; margin-bottom: 20px; }
+        .card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        button { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; flex: 1; min-width: 120px; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-update { background: #1a73e8; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-clear { background: #6c757d; color: white; }
+        button:hover { opacity: 0.9; }
+        
+        #alert-box { display: none; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; }
+        
+        /* Directory Data View Table Styling */
+        .table-responsive { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; }
+        th { background: #f1f3f4; font-weight: 600; color: #5f6368; }
+        tr:hover { background: #f8f9fa; cursor: pointer; }
+        .loading { text-align: center; padding: 20px; font-weight: bold; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <h2>Staff Directory Management Dashboard</h2>
+    
+    <div class="card">
+        <div id="alert-box"></div>
+        <form id="staffForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="service_number">Service Number</label>
+                    <input type="text" id="service_number" required placeholder="Unique ID (e.g. S123)">
+                </div>
+                <div class="form-group">
+                    <label for="rank">Rank</label>
+                    <input type="text" id="rank" required placeholder="e.g. Sergeant">
+                </div>
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" required placeholder="First & Last Name">
+                </div>
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <select id="department" required>
+                        <option value="">Select Department</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Offender Management">Offender Management</option>
+                        <option value="Security">Security</option>
+                        <option value="Stock and Inventory">Stock and Inventory</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service_category">Service Category</label>
+                    <select id="service_category" required>
+                        <option value="">Select Category</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Administrative">Administrative</option>
+                        <option value="Support Services">Support Services</option>
+                        <option value="Professional Services">Professional Services</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button type="button" class="btn-add" onclick="submitForm('add')">Add New Staff</button>
+                <button type="button" class="btn-update" onclick="submitForm('update')">Update Existing</button>
+                <button type="button" class="btn-delete" onclick="submitForm('delete')">Delete Record</button>
+                <button type="button" class="btn-clear" onclick="clearForm()">Clear Selection</button>
+            </div>
+        </form>
+    </div>
+
+    <h3>Active Staff Roster</h3>
+    <div class="table-responsive">
+        <table id="rosterTable">
+            <thead>
+                <tr>
+                    <th>Service Number</th>
+                    <th>Rank</th>
+                    <th>Full Name</th>
+                    <th>Department</th>
+                    <th>Service Category</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="5" class="loading">Fetching records database...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // CONFIGURATION: Paste your deployed Google Apps Script Web App URL here
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyI0yGTxBcJaKLJXBkqv8wTwWy0nM5QrXDD5zntncxlsmX5TOqJ17b5g3x3QNT725m/exec";
+
+    // Auto-fetch current staff list on view initialized
+    document.addEventListener("DOMContentLoaded", fetchRoster);
+
+    // 1. Read / Pull implementation
+    function fetchRoster() {
+        const tbody = document.getElementById("tableBody");
+        fetch(`${SCRIPT_URL}?action=getAllStaff`)
+            .then(res => res.json())
+            .then(response => {
+                if(response.success) {
+                    tbody.innerHTML = "";
+                    if(response.data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="loading">No staff found in records directory.</td></tr>`;
+                        return;
+                    }
+                    response.data.forEach(staff => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${staff.service_number}</td>
+                            <td>${staff.rank}</td>
+                            <td>${staff.full_name}</td>
+                            <td>${staff.department}</td>
+                            <td>${staff.service_category}</td>
+                        `;
+                        // Handle clicking on row to populate form inputs above
+                        row.addEventListener("click", () => populateForm(staff));
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="loading" style="color:red">Error: ${response.error}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="5" class="loading" style="color:red">Lookup connection loss error.</td></tr>`;
+            });
+    }
+
+    function populateForm(staff) {
+        document.getElementById("service_number").value = staff.service_number;
+        document.getElementById("service_number").readOnly = true; // Lock field context to stop key identifier changes during modifications
+        document.getElementById("rank").value = staff.rank;
+        document.getElementById("full_name").value = staff.full_name;
+        document.getElementById("department").value = staff.department;
+        document.getElementById("service_category").value = staff.service_category;
+    }
+
+    function clearForm() {
+        document.getElementById("staffForm").reset();
+        document.getElementById("service_number").readOnly = false;
+        showAlert("", false);
+    }
+
+    // 2. Add / Edit / Erase modification functions wrapped together
+    function submitForm(subAction) {
+        const sNum = document.getElementById("service_number").value.trim();
+        const rank = document.getElementById("rank").value.trim();
+        const name = document.getElementById("full_name").value.trim();
+        const dept = document.getElementById("department").value;
+        const cat  = document.getElementById("service_category").value;
+
+        // Simple input validation check layer
+        if(!sNum || ((subAction !== 'delete') && (!rank || !name || !dept || !cat))) {
+            showAlert("Please populate all necessary validation input blocks.", true);
+            return;
+        }
+
+        if(subAction === 'delete' && !confirm(`Are you completely sure you want to drop record info entry for ${sNum}?`)) {
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append("action", "manageStaff");
+        params.append("sub_action", subAction);
+        params.append("service_number", sNum);
+        params.append("rank", rank);
+        params.append("full_name", name);
+        params.append("department", dept);
+        params.append("service_category", cat);
+
+        showAlert("Sending instructions to database...", false, "#1a73e8", "#e8f0fe");
+
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            body: params,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                showAlert(res.message, false, "#2e7d32", "#e8f5e9");
+                clearForm();
+                fetchRoster(); // Reload dynamic matrix layout update values
+            } else {
+                showAlert(res.message, true);
+            }
+        })
+        .catch(err => {
+            showAlert("Failed communicating update stream profile with database context system.", true);
+        });
+    }
+
+    function showAlert(text, isError, customColor = "", customBg = "") {
+        const box = document.getElementById("alert-box");
+        if(!text) {
+            box.style.display = "none";
+            return;
+        }
+        box.style.display = "block";
+        box.textContent = text;
+        
+        if(isError) {
+            box.style.color = "#c62828";
+            box.style.background = "#ffebee";
+        } else {
+            box.style.color = customColor || "#2e7d32";
+            box.style.background = customBg || "#e8f5e9";
+        }
+    }
+</script>
+</body>
+</html>
