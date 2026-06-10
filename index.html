@@ -5,392 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Performance Appraisal System</title>
     <style>
-        /* Base and Mobile-First Styles */
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-            background-color: #f0f2f5; 
-            padding: 12px; 
-            margin: 0;
-            color: #333; 
-        }
-        .form-container { 
-            max-width: 650px; 
-            background: #fff; 
-            padding: 20px; 
-            margin: 0 auto; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-        }
-        h2 { 
-            margin-top: 0; 
-            color: #1a73e8; 
-            border-bottom: 2px solid #e8f0fe; 
-            padding-bottom: 10px; 
-            font-size: 1.5rem;
-        }
-        h3 { 
-            margin: 25px 0 12px 0; 
-            color: #5f6368; 
-            font-size: 0.85rem; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            border-left: 3px solid #1a73e8;
-            padding-left: 8px;
-        }
-        .form-group { 
-            margin-bottom: 16px; 
-        }
-        
-        /* Mobile-first: Stack everything in 1 column initially */
-        .grid-2 { 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 0; 
-        }
-        
-        label { 
-            display: block; 
-            margin-bottom: 6px; 
-            font-weight: 600; 
-            font-size: 14px; 
-            color: #444; 
-        }
-        
-        /* Large touch targets for easier mobile input interaction */
-        input[type="text"], input[type="date"], select { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #dadce0; 
-            border-radius: 6px; 
-            box-sizing: border-box; 
-            font-size: 16px; /* Prevents iOS auto-zoom behavior on focus */
-            background-color: #fff;
-            -webkit-appearance: none; /* Uniform styling across mobile browsers */
-            appearance: none;
-        }
-        
-        /* Restoring custom select dropdown arrows since appearance: none hides them */
-        select {
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M0 3l5 5 5-5z' fill='%23666'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 30px;
-        }
-
-        input[readonly] { 
-            background-color: #f1f3f4; 
-            color: #5f6368; 
-            cursor: not-allowed; 
-        }
-        .calculated-fields input[readonly] { 
-            background-color: #e8f0fe; 
-            font-weight: bold; 
-            color: #1a73e8; 
-        }
-        button { 
-            background-color: #1a73e8; 
-            color: white; 
-            padding: 16px 20px; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            width: 100%; 
-            font-size: 16px; 
-            font-weight: bold; 
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(26,115,232,0.2);
-        }
-        button:hover, button:active { 
-            background-color: #1557b0; 
-        }
-        button:disabled {
-            background-color: #dadce0;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        #lookup-status { 
-            font-size: 13px; 
-            font-weight: bold; 
-            margin-top: 6px; 
-            display: block; 
-        }
-        #message-box { 
-            display: none; 
-            padding: 14px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            margin-bottom: 20px; 
-            font-size: 14px;
-        }
-
-        /* Tablet and Desktop Layout Adjustments */
-        @media (min-width: 580px) {
-            body { 
-                padding: 30px; 
-            }
-            .form-container { 
-                padding: 35px; 
-            }
-            h2 {
-                font-size: 1.75rem;
-            }
-            .grid-2 { 
-                grid-template-columns: 1fr 1fr; 
-                gap: 15px; 
-            }
-        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f0f2f5; padding: 12px; margin: 0; color: #333; }
+        .form-container { max-width: 650px; background: #fff; padding: 20px; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #1a73e8; border-bottom: 2px solid #e8f0fe; padding-bottom: 10px; font-size: 1.5rem;}
+        h3 { margin: 25px 0 12px 0; color: #5f6368; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #1a73e8; padding-left: 8px;}
+        .form-group { margin-bottom: 16px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 0; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #444; }
+        input[type="text"], input[type="date"], select { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: #fff; appearance: none;}
+        select { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M0 3l5 5 5-5z' fill='%23666'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; }
+        input[readonly] { background-color: #f1f3f4; color: #5f6368; cursor: not-allowed; }
+        .calculated-fields input[readonly] { background-color: #e8f0fe; font-weight: bold; color: #1a73e8; }
+        button { background-color: #1a73e8; color: white; padding: 16px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 20px;}
+        button:disabled { background-color: #dadce0; cursor: not-allowed; }
+        .status-msg { font-size: 13px; font-weight: bold; margin-top: 6px; display: block; }
+        #message-box { display: none; padding: 14px; border-radius: 6px; font-weight: bold; margin-bottom: 20px; font-size: 14px;}
+        @media (min-width: 580px) { body { padding: 30px; } .form-container { padding: 35px; } .grid-2 { grid-template-columns: 1fr 1fr; gap: 15px; } }
     </style>
 </head>
 <body>
 
 <div class="form-container">
     <h2>Performance Appraisal Form</h2>
-    
     <div id="message-box"></div>
 
     <form id="appraisalForm">
-        
-        <h3>Personnel Information</h3>
+        <h3>Reviewing Officer (Supervisor)</h3>
+        <div class="form-group">
+            <label for="supervisor_id">Your Service Number</label>
+            <input type="text" id="supervisor_id" placeholder="Enter your ID to unlock form" autocomplete="off" required>
+            <span id="sup-lookup-status" class="status-msg"></span>
+        </div>
+        <div class="form-group">
+            <label for="supervisor">Supervisor's Rank and Name</label>
+            <input type="text" id="supervisor" name="supervisor" readonly placeholder="Awaiting your ID verification..." required>
+        </div>
+
+        <h3>Personnel Information (Staff Under Review)</h3>
         <div class="form-group">
             <label for="date_val">Date</label>
             <input type="date" id="date_val" name="date_val" required>
         </div>
-
         <div class="form-group">
-            <label for="service_number">Service Number</label>
-            <input type="text" id="service_number" name="service_number" placeholder="Enter Service No. & tap outside" autocomplete="off" required>
-            <span id="lookup-status"></span>
+            <label for="service_number">Staff Service Number</label>
+            <input type="text" id="service_number" placeholder="Enter Staff Service No." autocomplete="off" required>
+            <span id="staff-lookup-status" class="status-msg"></span>
         </div>
 
         <div class="grid-2">
             <div class="form-group">
-                <label for="rank">Rank</label>
-                <input type="text" id="rank" name="rank" readonly placeholder="Awaiting service number..." required>
+                <label for="rank">Staff Rank</label>
+                <input type="text" id="rank" name="rank" readonly placeholder="Awaiting staff ID..." required>
             </div>
             <div class="form-group">
-                <label for="full_name">Full Name</label>
-                <input type="text" id="full_name" name="full_name" readonly placeholder="Awaiting service number..." required>
+                <label for="full_name">Staff Full Name</label>
+                <input type="text" id="full_name" name="full_name" readonly placeholder="Awaiting staff ID..." required>
             </div>
         </div>
 
         <h3>Performance Metrics (Score 1 - 5)</h3>
         <div class="grid-2">
-            <div class="form-group">
-                <label for="uniformity">Uniformity</label>
-                <select class="score-input" id="uniformity" name="uniformity" required>
-                    <option value="0">Select Score</option>
-                    <option value="5">5 - Outstanding</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Satisfactory</option>
-                    <option value="2">2 - Marginal</option>
-                    <option value="1">1 - Unsatisfactory</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="punctuality">Punctuality</label>
-                <select class="score-input" id="punctuality" name="punctuality" required>
-                    <option value="0">Select Score</option>
-                    <option value="5">5 - Outstanding</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Satisfactory</option>
-                    <option value="2">2 - Marginal</option>
-                    <option value="1">1 - Unsatisfactory</option>
-                </select>
-            </div>
+            <div class="form-group"><label for="uniformity">Uniformity</label><select class="score-input" id="uniformity" name="uniformity" required><option value="0">Select Score</option><option value="5">5 - Outstanding</option><option value="4">4 - Good</option><option value="3">3 - Satisfactory</option><option value="2">2 - Marginal</option><option value="1">1 - Unsatisfactory</option></select></div>
+            <div class="form-group"><label for="punctuality">Punctuality</label><select class="score-input" id="punctuality" name="punctuality" required><option value="0">Select Score</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
         </div>
-
         <div class="grid-2">
-            <div class="form-group">
-                <label for="discipline">Discipline and Respect</label>
-                <select class="score-input" id="discipline" name="discipline" required>
-                    <option value="0">Select Score</option>
-                    <option value="5">5 - Outstanding</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Satisfactory</option>
-                    <option value="2">2 - Marginal</option>
-                    <option value="1">1 - Unsatisfactory</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="participation">Participation</label>
-                <select class="score-input" id="participation" name="participation" required>
-                    <option value="0">Select Score</option>
-                    <option value="5">5 - Outstanding</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3">3 - Satisfactory</option>
-                    <option value="2">2 - Marginal</option>
-                    <option value="1">1 - Unsatisfactory</option>
-                </select>
-            </div>
+            <div class="form-group"><label for="discipline">Discipline and Respect</label><select class="score-input" id="discipline" name="discipline" required><option value="0">Select Score</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
+            <div class="form-group"><label for="participation">Participation</label><select class="score-input" id="participation" name="participation" required><option value="0">Select Score</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
         </div>
-
-        <div class="form-group">
-            <label for="quality_of_work">Quality of Work</label>
-            <select class="score-input" id="quality_of_work" name="quality_of_work" required>
-                <option value="0">Select Score</option>
-                <option value="5">5 - Outstanding</option>
-                <option value="4">4 - Good</option>
-                <option value="3">3 - Satisfactory</option>
-                <option value="2">2 - Marginal</option>
-                <option value="1">1 - Unsatisfactory</option>
-            </select>
-        </div>
-
-        <h3>Reviewing Officer</h3>
-        <div class="form-group">
-            <label for="supervisor">Supervisor's Rank and Name</label>
-            <select id="supervisor" name="supervisor" required>
-                <option value="">Select Supervisor</option>
-                <option value="DSP Ahmed Jaadhullah">DSP Ahmed Jaadhullah</option>
-                <option value="DSP Ibrahim Afeef">DSP Ibrahim Afeef</option>
-                <option value="ASP Shakeel Shareef">ASP Shakeel Shareef</option>
-                <option value="ASP Ahmed Shahid">ASP Ahmed Shahid</option>
-            </select>
-        </div>
+        <div class="form-group"><label for="quality_of_work">Quality of Work</label><select class="score-input" id="quality_of_work" name="quality_of_work" required><option value="0">Select Score</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
 
         <h3>Calculated Results</h3>
         <div class="grid-2 calculated-fields">
-            <div class="form-group">
-                <label for="total">Total Score (Out of 25)</label>
-                <input type="text" id="total" name="total" readonly value="0">
-            </div>
-            <div class="form-group">
-                <label for="percentage">Percentage</label>
-                <input type="text" id="percentage" name="percentage" readonly value="0%">
-            </div>
+            <div class="form-group"><label for="total">Total Score (Out of 25)</label><input type="text" id="total" name="total" readonly value="0"></div>
+            <div class="form-group"><label for="percentage">Percentage</label><input type="text" id="percentage" name="percentage" readonly value="0%"></div>
         </div>
-
         <button type="submit" id="submitBtn">Submit Performance Review</button>
     </form>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK0euyLj1qSrr5MmDwx6p3Ju7-CVyxbLIgMR61SfWxjPR2xpNJqWUlGfpAbybCsAF4/exec";
-
+    const SCRIPT_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE";
     document.getElementById('date_val').max = new Date().toISOString().split("T")[0];
 
-    // Staff Directory Lookup
-    document.getElementById('service_number').addEventListener('blur', function() {
-        const serviceNo = this.value.trim();
-        const statusSpan = document.getElementById('lookup-status');
-        const rankField = document.getElementById('rank');
-        const nameField = document.getElementById('full_name');
-
+    function lookupServiceNumber(serviceNo, statusElement, callback) {
         if (!serviceNo) return;
-
-        statusSpan.textContent = "Searching local directory...";
-        statusSpan.style.color = "#1a73e8";
-
+        statusElement.textContent = "Searching directory..."; statusElement.style.color = "#1a73e8";
         fetch(`${SCRIPT_URL}?service_number=${encodeURIComponent(serviceNo)}`)
-            .then(response => response.json())
-            .then(data => {
+            .then(res => res.json()).then(data => {
                 if (data.success) {
-                    rankField.value = data.rank;
-                    nameField.value = data.full_name;
-                    statusSpan.textContent = "Staff member verified ✓";
-                    statusSpan.style.color = "#2e7d32";
+                    statusElement.textContent = "Verified ✓"; statusElement.style.color = "#2e7d32";
+                    callback(data.rank, data.full_name);
                 } else {
-                    rankField.value = "";
-                    nameField.value = "";
-                    statusSpan.textContent = "Verification Failed: Staff number not found.";
-                    statusSpan.style.color = "#c62828";
+                    statusElement.textContent = "Not found."; statusElement.style.color = "#c62828";
+                    callback("", "");
                 }
-            })
-            .catch(error => {
-                console.error("Fetch lookup error:", error);
-                statusSpan.textContent = "Connection lookup error.";
-                statusSpan.style.color = "#c62828";
-            });
-    });
-
-    // Score Calculation System
-    const scoreInputs = document.querySelectorAll('.score-input');
-    const totalField = document.getElementById('total');
-    const percentageField = document.getElementById('percentage');
-
-    scoreInputs.forEach(input => {
-        input.addEventListener('change', calculateMetrics);
-    });
-
-    function calculateMetrics() {
-        let total = 0;
-        const maxScore = 25; 
-
-        scoreInputs.forEach(input => {
-            total += parseInt(input.value) || 0;
-        });
-
-        let percentage = (total / maxScore) * 100;
-
-        totalField.value = total;
-        percentageField.value = percentage.toFixed(1) + "%";
+            }).catch(() => { statusElement.textContent = "Connection error."; callback("", ""); });
     }
 
-    // Form Submission Handler
-    document.getElementById('appraisalForm').addEventListener('submit', function(e) {
-        e.preventDefault(); 
-
-        const msgBox = document.getElementById('message-box');
-        const submitBtn = document.getElementById('submitBtn');
-        const rank = document.getElementById('rank').value;
-        const fullName = document.getElementById('full_name').value;
-
-        if (!rank || !fullName) {
-            msgBox.style.display = "block";
-            msgBox.style.color = "#c62828";
-            msgBox.style.background = "#ffebee";
-            msgBox.textContent = "Submission Failed: You cannot submit an appraisal for an unverified Service Number.";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting score data...";
-        msgBox.style.display = "none";
-
-        const formData = new FormData(this);
-        const searchParams = new URLSearchParams();
-
-        for (const pair of formData) {
-            searchParams.append(pair[0], pair[1]);
-        }
-
-        searchParams.append('total', document.getElementById('total').value);
-        searchParams.append('percentage', document.getElementById('percentage').value);
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: searchParams,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        })
-        .then(response => response.json())
-        .then(result => {
-            msgBox.style.display = "block";
-            if (result.result === 'success') {
-                msgBox.style.color = "#2e7d32";
-                msgBox.style.background = "#e8f5e9";
-                msgBox.textContent = "Appraisal submitted successfully!";
-                document.getElementById('appraisalForm').reset();
-                document.getElementById('lookup-status').textContent = "";
-                calculateMetrics();
-            } else {
-                throw new Error(result.error || "Unknown response");
-            }
-        })
-        .catch(error => {
-            console.error("Submission error:", error);
-            msgBox.style.display = "block";
-            msgBox.style.color = "#c62828";
-            msgBox.style.background = "#ffebee";
-            msgBox.textContent = "Error saving records to spreadsheet. Please try again.";
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Submit Performance Review";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('supervisor_id').addEventListener('blur', function() {
+        lookupServiceNumber(this.value.trim(), document.getElementById('sup-lookup-status'), (rank, name) => {
+            document.getElementById('supervisor').value = rank && name ? `${rank}. ${name}` : "";
         });
+    });
+
+    document.getElementById('service_number').addEventListener('blur', function() {
+        lookupServiceNumber(this.value.trim(), document.getElementById('staff-lookup-status'), (rank, name) => {
+            document.getElementById('rank').value = rank; document.getElementById('full_name').value = name;
+        });
+    });
+
+    const scoreInputs = document.querySelectorAll('.score-input');
+    scoreInputs.forEach(i => i.addEventListener('change', () => {
+        let total = 0; scoreInputs.forEach(input => { total += parseInt(input.value) || 0; });
+        document.getElementById('total').value = total;
+        document.getElementById('percentage').value = ((total / 25) * 100).toFixed(1) + "%";
+    }));
+
+    document.getElementById('appraisalForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const msgBox = document.getElementById('message-box');
+        if (!document.getElementById('supervisor').value || !document.getElementById('full_name').value) {
+            msgBox.style.display = "block"; msgBox.style.color = "#c62828"; msgBox.style.background = "#ffebee";
+            msgBox.textContent = "Error: Verify IDs before submitting."; return;
+        }
+        document.getElementById('submitBtn').disabled = true;
+        const params = new URLSearchParams(new FormData(this));
+        params.append('service_number', document.getElementById('service_number').value.trim());
+        params.append('total', document.getElementById('total').value);
+        params.append('percentage', document.getElementById('percentage').value);
+
+        fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+        .then(res => res.json()).then(res => {
+            msgBox.style.display = "block";
+            if (res.result === 'success') {
+                msgBox.style.color = "#2e7d32"; msgBox.style.background = "#e8f5e9"; msgBox.textContent = "Appraisal submitted successfully!";
+                document.getElementById('appraisalForm').reset();
+            }
+        }).catch(() => { msgBox.style.display = "block"; msgBox.style.color = "#c62828"; msgBox.textContent = "Network entry failure."; })
+        .finally(() => { document.getElementById('submitBtn').disabled = false; window.scrollTo({top:0, behavior:'smooth'}); });
     });
 </script>
 </body>
